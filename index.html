@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DanhBạ · RồngLeo</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:       #0b0c10;
+  --s1:       #13141a;
+  --s2:       #1a1b23;
+  --s3:       #22232e;
+  --border:   rgba(255,255,255,.07);
+  --border2:  rgba(255,255,255,.12);
+  --accent:   #c8440a;
+  --accent-d: #a0350a;
+  --green:    #2effa8;
+  --text:     #eeeef4;
+  --t2:       #8888a8;
+  --t3:       #44445a;
+  --gold:     #f5c842;
+  --silver:   #a0aec0;
+  --bronze:   #cd7f32;
+  --danger:   #e53e3e;
+  --r: 10px;
+  --r2: 14px;
+  --sidebar-w: 220px;
+  --header-h: 56px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px}
+
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100%}
+.top-bar{
+  height:var(--header-h);flex-shrink:0;
+  background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;padding:0 14px;
+  position:relative;z-index:50;
+}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px;white-space:nowrap;color:var(--text)}
+.logo span{color:var(--accent)}
+.search-wrap{flex:1;max-width:340px;position:relative}
+.search-wrap input{
+  width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:7px 10px 7px 32px;color:var(--text);font-family:inherit;font-size:13px;outline:none;
+  transition:border-color .2s
+}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap .s-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:14px;pointer-events:none}
+.top-actions{display:flex;gap:6px;margin-left:auto}
+
+.body{display:flex;flex:1;min-height:0}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--s1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-scroll{overflow-y:auto;flex:1;padding:10px 8px}
+.sb-sec{font-size:10px;color:var(--t3);font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:10px 8px 4px}
+.sb-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;
+  cursor:pointer;color:var(--t2);font-size:13px;transition:all .15s;user-select:none
+}
+.sb-item:hover{background:var(--s2);color:var(--text)}
+.sb-item.active{background:rgba(200,68,10,.12);color:var(--accent);font-weight:500}
+.sb-item .ico{font-size:14px;flex-shrink:0;width:18px;text-align:center}
+.sb-item .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-item .cnt{
+  font-size:10px;font-family:'DM Mono',monospace;font-weight:500;
+  background:var(--s3);color:var(--t3);padding:1px 6px;border-radius:10px;min-width:20px;text-align:center
+}
+.sb-item.active .cnt{background:rgba(200,68,10,.2);color:var(--accent)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.toolbar{
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--s1);
+}
+.select-n{
+  background:var(--s2);border:1px solid var(--border);color:var(--t2);
+  padding:5px 8px;border-radius:7px;font-family:inherit;font-size:12px;outline:none;cursor:pointer
+}
+.lbl-count{font-size:12px;color:var(--t3);margin-left:auto}
+.contacts-wrap{flex:1;overflow-y:auto;padding:14px 16px}
+.contacts-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:10px
+}
+
+/* ── CARD ── */
+.card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r2);
+  padding:16px;cursor:pointer;transition:all .18s;position:relative;overflow:hidden
+}
+.card::after{
+  content:'';position:absolute;inset:0;border-radius:var(--r2);
+  background:linear-gradient(135deg,var(--accent),transparent);
+  opacity:0;transition:opacity .2s
+}
+.card:hover{border-color:rgba(200,68,10,.4);transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,0,0,.4)}
+.card:hover::after{opacity:.04}
+.card-top{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
+.av{
+  width:42px;height:42px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:#fff;letter-spacing:-.5px
+}
+.ci{flex:1;min-width:0}
+.cname{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.corg{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rel-badge{
+  display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:6px;
+  font-size:10px;font-weight:700;letter-spacing:.3px;flex-shrink:0
+}
+.r1{background:rgba(245,200,66,.12);color:var(--gold)}
+.r2{background:rgba(160,174,192,.12);color:var(--silver)}
+.r3{background:rgba(205,127,50,.12);color:var(--bronze)}
+.cphone{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);margin-bottom:8px}
+.ctags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{padding:2px 7px;border-radius:5px;font-size:10px;font-weight:500}
+.tag-spec{background:rgba(46,255,168,.1);color:var(--green)}
+.tag-list{background:rgba(200,68,10,.1);color:var(--accent)}
+.tag-via{background:var(--s3);color:var(--t2)}
+.card-acts{
+  position:absolute;top:10px;right:10px;display:flex;gap:4px;
+  opacity:0;transition:opacity .15s
+}
+.card:hover .card-acts{opacity:1}
+.ib{
+  width:26px;height:26px;border-radius:6px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:12px;
+  background:var(--s2);color:var(--t2);transition:all .15s
+}
+.ib:hover.edit{background:rgba(200,68,10,.2);color:var(--accent)}
+.ib:hover.del{background:rgba(229,62,62,.2);color:var(--danger)}
+
+/* ── EMPTY ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:10px;color:var(--t3)}
+.empty .ei{font-size:42px;opacity:.4}
+.empty p{font-size:14px}
+
+/* ── STATUS BAR ── */
+.statusbar{
+  height:28px;flex-shrink:0;background:var(--s1);border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;padding:0 16px;
+}
+.statusbar span{font-size:11px;color:var(--t3);font-family:'DM Mono',monospace}
+.statusbar b{color:var(--t2)}
+
+/* ── BTN ── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;
+  border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;
+  transition:all .15s;white-space:nowrap
+}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-d)}
+.btn-g{background:transparent;color:var(--t2);border:1px solid var(--border)}
+.btn-g:hover{background:var(--s2);color:var(--text)}
+.btn-gr{background:var(--green);color:#111}
+.btn-gr:hover{filter:brightness(.9)}
+.btn-d{background:var(--danger);color:#fff}
+.btn-d:hover{background:#c53030}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ── OVERLAY / MODAL ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:20px 14px;overflow-y:auto;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+  backdrop-filter:blur(4px)
+}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--s1);border:1px solid var(--border2);border-radius:16px;
+  width:100%;max-width:560px;margin:auto;
+  padding:26px;transform:translateY(16px);transition:transform .2s
+}
+.overlay.open .modal{transform:translateY(0)}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:22px;color:var(--text)}
+
+/* ── FORM ── */
+.fgrid{display:grid;gap:14px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.fg input,.fg select,.fg textarea{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:9px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none;
+  transition:border-color .2s
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent)}
+.fg select option{background:var(--s2)}
+.fg textarea{resize:vertical}
+.dyn-field{
+  display:flex;align-items:center;gap:6px;
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:4px 6px 4px 10px;transition:border-color .2s
+}
+.dyn-field:focus-within{border-color:var(--accent)}
+.dyn-field input,.dyn-field select{
+  background:transparent;border:none;color:var(--text);font-family:inherit;font-size:13px;
+  outline:none;flex:1;padding:4px 0
+}
+.dyn-field select{flex:0 0 auto;color:var(--t2);font-size:12px;padding:4px 4px;border-right:1px solid var(--border);margin-right:4px}
+.dyn-list{display:flex;flex-direction:column;gap:6px}
+.add-row{display:flex;align-items:center;gap:6px}
+.add-row button{
+  background:var(--s3);border:none;color:var(--t2);cursor:pointer;
+  padding:4px 10px;border-radius:6px;font-size:12px;font-family:inherit;transition:all .15s
+}
+.add-row button:hover{background:var(--accent);color:#fff}
+.rm-btn{
+  background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px;
+  padding:3px 5px;border-radius:4px;transition:all .1s;flex-shrink:0
+}
+.rm-btn:hover{color:var(--danger)}
+
+/* ── TAGS ── */
+.tags-wrap{
+  display:flex;flex-wrap:wrap;gap:6px;padding:8px;
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;min-height:40px;
+}
+.tags-wrap:focus-within{border-color:var(--accent)}
+.tag-chip{
+  display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:5px;
+  background:var(--s3);color:var(--text);font-size:12px
+}
+.tag-chip button{background:none;border:none;cursor:pointer;color:var(--t3);font-size:12px;padding:0 1px;line-height:1}
+.tag-chip button:hover{color:var(--danger)}
+.tag-input{background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-family:inherit;min-width:80px;flex:1}
+.tag-dropdown{
+  position:absolute;z-index:10;background:var(--s2);border:1px solid var(--border2);
+  border-radius:8px;padding:4px 0;min-width:160px;max-height:160px;overflow-y:auto;
+  box-shadow:0 8px 24px rgba(0,0,0,.5)
+}
+.tag-dropdown div{padding:6px 12px;cursor:pointer;font-size:13px;color:var(--t2);transition:all .1s}
+.tag-dropdown div:hover{background:var(--s3);color:var(--text)}
+.tag-dd-wrap{position:relative}
+
+/* ── IMPORT/EXPORT MODAL ── */
+.ie-tabs{display:flex;gap:4px;margin-bottom:18px}
+.ie-tab{
+  padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;
+  border:1px solid var(--border);background:transparent;color:var(--t2);font-family:inherit;
+  transition:all .15s
+}
+.ie-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.drop-zone{
+  border:2px dashed var(--border);border-radius:12px;padding:36px;text-align:center;
+  cursor:pointer;transition:all .2s;margin-bottom:14px
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:rgba(200,68,10,.04)}
+.dz-icon{font-size:32px;margin-bottom:8px}
+.drop-zone p{color:var(--t2);font-size:14px;margin-bottom:4px}
+.drop-zone small{color:var(--t3);font-size:12px}
+.import-opts{display:flex;gap:8px;margin-bottom:14px}
+.import-opt-btn{
+  flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--t2);cursor:pointer;font-family:inherit;font-size:13px;
+  transition:all .15s;text-align:center
+}
+.import-opt-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(200,68,10,.08)}
+.preview-scroll{max-height:200px;overflow-y:auto;margin-bottom:14px}
+.ptable{width:100%;border-collapse:collapse;font-size:12px}
+.ptable th,.ptable td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+.ptable th{color:var(--t2);font-weight:600;position:sticky;top:0;background:var(--s1)}
+.exp-opts{display:flex;flex-direction:column;gap:10px}
+.exp-opt{
+  display:flex;align-items:center;gap:12px;padding:14px;
+  border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s
+}
+.exp-opt:hover{border-color:var(--accent);background:rgba(200,68,10,.04)}
+.exp-icon{font-size:22px}
+.exp-info{flex:1}
+.exp-title{font-weight:600;font-size:14px;margin-bottom:2px}
+.exp-desc{font-size:12px;color:var(--t3)}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:22px}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{
+  width:320px;min-width:320px;background:var(--s1);border-left:1px solid var(--border);
+  overflow-y:auto;display:none;flex-direction:column;
+  animation:slideIn .2s ease
+}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.detail-panel.open{display:flex}
+.dp-head{padding:20px 20px 0;display:flex;justify-content:flex-end}
+.dp-body{padding:0 20px 20px;display:flex;flex-direction:column;gap:16px}
+.dp-av{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin:0 auto}
+.dp-name{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;text-align:center;color:var(--text)}
+.dp-org{text-align:center;color:var(--t2);font-size:13px}
+.dp-rel{display:flex;justify-content:center}
+.dp-sec{border-top:1px solid var(--border);padding-top:14px}
+.dp-sec-title{font-size:10px;color:var(--t3);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.dp-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:7px}
+.dp-lbl{font-size:11px;color:var(--t3);min-width:82px;padding-top:1px}
+.dp-val{font-size:13px;color:var(--text);flex:1;word-break:break-word}
+.dp-val a{color:var(--accent);text-decoration:none}
+.dp-val a:hover{text-decoration:underline}
+.dp-phones{display:flex;flex-direction:column;gap:3px}
+.dp-foot{padding:0 20px 20px;display:flex;gap:8px}
+.dp-foot .btn{flex:1;justify-content:center}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:10px 16px;font-size:13px;color:var(--text);
+  transform:translateY(12px);opacity:0;transition:all .25s;pointer-events:none;
+  max-width:280px
+}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-color:rgba(46,255,168,.3);color:var(--green)}
+#toast.err{border-color:rgba(229,62,62,.3);color:var(--danger)}
+
+/* ── LOADING ── */
+#loading{
+  position:fixed;inset:0;background:var(--bg);z-index:999;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px
+}
+.spin{width:32px;height:32px;border:2px solid var(--s3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{color:var(--t2);font-size:13px}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  .sidebar{display:none}
+  .frow{grid-template-columns:1fr}
+  .detail-panel{width:100%;min-width:0;position:fixed;inset:0;z-index:100}
+  .contacts-grid{grid-template-columns:1fr}
+  .top-actions .btn-g{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spin"></div><p>Đang tải danh bạ…</p></div>
+<div id="toast"></div>
+
+<div id="app">
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="logo">Danh<span>Bạ</span></div>
+  <div class="search-wrap">
+    <span class="s-icon">⌕</span>
+    <input id="searchInput" type="search" placeholder="Tên, SĐT, đơn vị…" oninput="renderContacts()">
+  </div>
+  <div class="top-actions">
+    <button class="btn btn-g btn-sm" onclick="openIE()">⇅ Import/Export</button>
+    <button class="btn btn-p btn-sm" onclick="openAdd()">＋ Thêm</button>
+  </div>
+</div>
+
+<div class="body">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-scroll">
+    <div class="sb-sec">Xem</div>
+    <div class="sb-item active" data-f="all" onclick="setSbFilter(this,'all')">
+      <span class="ico">👥</span><span class="lbl">Tất cả</span><span class="cnt" id="c-all">0</span>
+    </div>
+    <div class="sb-item" data-f="r1" onclick="setSbFilter(this,'r1')">
+      <span class="ico">★★★</span><span class="lbl">Thân thiết</span><span class="cnt" id="c-r1">0</span>
+    </div>
+    <div class="sb-item" data-f="r2" onclick="setSbFilter(this,'r2')">
+      <span class="ico">★★</span><span class="lbl">Quen biết</span><span class="cnt" id="c-r2">0</span>
+    </div>
+    <div class="sb-item" data-f="r3" onclick="setSbFilter(this,'r3')">
+      <span class="ico">★</span><span class="lbl">Sơ quen</span><span class="cnt" id="c-r3">0</span>
+    </div>
+    <div class="sb-sec">Danh sách</div>
+    <div id="sbLists"></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="toolbar">
+    <span style="font-size:12px;color:var(--t3)">Sắp xếp:</span>
+    <select class="select-n" id="sortSel" onchange="renderContacts()">
+      <option value="name">Tên A→Z</option>
+      <option value="rel">Quan hệ</option>
+      <option value="recent">Mới thêm</option>
+    </select>
+    <span style="font-size:12px;color:var(--t3)">Chuyên môn:</span>
+    <select class="select-n" id="specSel" onchange="renderContacts()">
+      <option value="">Tất cả</option>
+    </select>
+    <span class="lbl-count" id="lblCount"></span>
+  </div>
+
+  <div style="display:flex;flex:1;min-height:0;overflow:hidden">
+    <div class="contacts-wrap" id="contactsWrap">
+      <div class="contacts-grid" id="grid"></div>
+    </div>
+    <!-- DETAIL -->
+    <div class="detail-panel" id="detailPanel"></div>
+  </div>
+</div>
+</div><!-- .body -->
+
+<div class="statusbar">
+  <span>Tổng: <b id="st-total">0</b></span>
+  <span>Thân thiết: <b id="st-r1">0</b></span>
+  <span>Quen biết: <b id="st-r2">0</b></span>
+  <span>Sơ quen: <b id="st-r3">0</b></span>
+  <span>Lists: <b id="st-lists">0</b></span>
+</div>
+</div><!-- #app -->
+
+<!-- ══════════ CONTACT MODAL ══════════ -->
+<div class="overlay" id="contactModal">
+<div class="modal">
+  <div class="modal-title" id="modalTitle">Thêm liên hệ</div>
+  <div class="fgrid">
+
+    <div class="frow">
+      <div class="fg"><label>Họ tên *</label><input id="f-name" placeholder="Nguyễn Văn A"></div>
+      <div class="fg">
+        <label>Mức độ quan hệ</label>
+        <select id="f-rel">
+          <option value="1">★★★ Thân thiết</option>
+          <option value="2" selected>★★ Quen biết</option>
+          <option value="3">★ Sơ quen</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PHONES -->
+    <div class="fg">
+      <label>Số điện thoại *</label>
+      <div class="dyn-list" id="phones-list"></div>
+      <div class="add-row" style="margin-top:6px">
+        <button onclick="addPhone()">＋ Thêm số</button>
+      </div>
+    </div>
+
+    <!-- EMAILS -->
+    <div class="fg">
+      <label>Email</label>
+      <div class="dyn-list" id="emails-list"></div>
+      <div class="add-row" style="margin-top:6px">
+        <button onclick="addEmail()">＋ Thêm email</button>
+      </div>
+    </div>
+
+    <!-- SOCIALS -->
+    <div class="fg">
+      <label>Mạng xã hội</label>
+      <div class="dyn-list" id="socials-list"></div>
+      <div class="add-row" style="margin-top:6px">
+        <button onclick="addSocial()">＋ Thêm MXH</button>
+      </div>
+    </div>
+
+    <div class="frow">
+      <div class="fg"><label>Đơn vị công tác</label><input id="f-org" placeholder="Công ty ABC"></div>
+      <div class="fg"><label>Chức vụ</label><input id="f-position" placeholder="Giám đốc"></div>
+    </div>
+
+    <!-- SPECS TAGS -->
+    <div class="fg">
+      <label>Chuyên môn (nhấn Enter để thêm)</label>
+      <div class="tags-wrap" id="specs-wrap" onclick="document.getElementById('spec-input').focus()">
+        <input id="spec-input" class="tag-input" placeholder="VD: Luật, Y tế…" onkeydown="tagsKeydown(event,'specs')">
+      </div>
+    </div>
+
+    <!-- LISTS TAGS -->
+    <div class="fg">
+      <label>Danh sách (nhấn Enter để thêm)</label>
+      <div class="tag-dd-wrap">
+        <div class="tags-wrap" id="lists-wrap" onclick="document.getElementById('list-input').focus()">
+          <input id="list-input" class="tag-input" placeholder="VD: Công ty cũ, Hội nghị…"
+            onkeydown="tagsKeydown(event,'lists')" oninput="showListDD()" onfocus="showListDD()" onblur="setTimeout(hideListDD,180)">
+        </div>
+        <div class="tag-dropdown" id="list-dd" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="frow">
+      <div class="fg"><label>Quen qua ai</label><input id="f-via" placeholder="Nguyễn Văn B"></div>
+    </div>
+
+    <div class="fg"><label>Ghi chú</label><textarea id="f-note" rows="3" placeholder="Ghi chú thêm…"></textarea></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-g" onclick="closeContactModal()">Hủy</button>
+    <button class="btn btn-p" onclick="saveContact()">💾 Lưu</button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ IMPORT/EXPORT MODAL ══════════ -->
+<div class="overlay" id="ieModal">
+<div class="modal">
+  <div class="modal-title">Import / Export</div>
+  <div class="ie-tabs">
+    <button class="ie-tab active" onclick="ieTab(this,'import')">⬆ Import</button>
+    <button class="ie-tab" onclick="ieTab(this,'export')">⬇ Export</button>
+  </div>
+
+  <div id="ie-import">
+    <div class="drop-zone" id="dropZone"
+      onclick="document.getElementById('fileIn').click()"
+      ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+      <div class="dz-icon">📂</div>
+      <p>Kéo thả hoặc click để chọn file</p>
+      <small>Hỗ trợ: VCF, CSV, JSON</small>
+    </div>
+    <input type="file" id="fileIn" accept=".vcf,.csv,.json" style="display:none" onchange="handleFile(this)">
+
+    <div id="importOpts" style="display:none">
+      <div class="import-opts">
+        <button class="import-opt-btn active" id="opt-skip" onclick="setImportMode('skip')">⏭ Skip trùng</button>
+        <button class="import-opt-btn" id="opt-overwrite" onclick="setImportMode('overwrite')">♻ Ghi đè</button>
+      </div>
+    </div>
+    <div id="importPreview"></div>
+    <div class="modal-foot">
+      <button class="btn btn-g" onclick="closeIE()">Hủy</button>
+      <button class="btn btn-gr" id="importConfirm" style="display:none" onclick="confirmImport()">✓ Nhập danh bạ</button>
+    </div>
+  </div>
+
+  <div id="ie-export" style="display:none">
+    <div class="exp-opts">
+      <div class="exp-opt" onclick="exportData('json')">
+        <div class="exp-icon">🗄</div>
+        <div class="exp-info">
+          <div class="exp-title">JSON — Full backup</div>
+          <div class="exp-desc">Toàn bộ data + metadata, import lại được vào app</div>
+        </div>
+        <button class="btn btn-gr btn-sm" style="pointer-events:none">Xuất</button>
+      </div>
+      <div class="exp-opt" onclick="exportData('csv')">
+        <div class="exp-icon">📊</div>
+        <div class="exp-info">
+          <div class="exp-title">CSV — Excel / Sheets</div>
+          <div class="exp-desc">Flatten fields, mở được trong Excel, Google Sheets</div>
+        </div>
+        <button class="btn btn-gr btn-sm" style="pointer-events:none">Xuất</button>
+      </div>
+      <div class="exp-opt" onclick="exportData('vcf')">
+        <div class="exp-icon">📱</div>
+        <div class="exp-info">
+          <div class="exp-title">VCF — vCard 3.0</div>
+          <div class="exp-desc">Multi-phone, multi-email, social URLs. Import thẳng vào điện thoại</div>
+        </div>
+        <button class="btn btn-gr btn-sm" style="pointer-events:none">Xuất</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-g" onclick="closeIE()">Đóng</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const SUPABASE_URL = "https://ejxummgrpimhvzrwatjr.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqeHVtbWdycGltaHZ6cndhdGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MjgxMzcsImV4cCI6MjA5MDUwNDEzN30.uqDtqlTVfTlzYNkqj5HoPuXBgrbIBxcvbUuEFCYTWCE";
+const USER_ID = "RongLeo";
+const APP_ID  = "danh_ba";
+const TABLE   = "contacts";
+const LS_KEY  = `${USER_ID}_${APP_ID}_contacts`;
+
+// ═══════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════
+let sb = null;
+let sbOk = false;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sbOk = SUPABASE_URL !== "YOUR_SUPABASE_URL";
+} catch(e) { sbOk = false; }
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let contacts = [];
+let editId    = null;
+let curFilter = "all";
+let curList   = null;
+let importBuf = [];
+let importMode = "skip";
+let tagState  = { specs: [], lists: [] };
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);
+const $ = id => document.getElementById(id);
+const COLORS = ["#c8440a","#2563eb","#059669","#7c3aed","#d97706","#db2777","#0891b2","#65a30d"];
+function aColor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0xffffff; return COLORS[h%COLORS.length]; }
+function initials(name){ return name.trim().split(/\s+/).slice(-2).map(w=>w[0]).join("").toUpperCase().slice(0,2); }
+function normalizePhone(p){ return (p||"").replace(/[\s\-\(\)\.]/g,""); }
+function normalizeName(n){ return (n||"").toLowerCase().trim(); }
+function dedupeKey(c){
+  const ph = (c.phones||[]).map(p=>normalizePhone(p.value)).filter(Boolean).sort().join("|");
+  return normalizeName(c.name)+":"+ph;
+}
+const RELMAP = {1:"★★★",2:"★★",3:"★"};
+const RELLBL = {1:"Thân thiết",2:"Quen biết",3:"Sơ quen"};
+
+function toast(msg, type="ok", dur=2800){
+  const t=$("toast"); t.textContent=msg; t.className="show "+(type||"");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.className="",dur);
+}
+
+// ═══════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════
+function saveLocal(){
+  try { localStorage.setItem(LS_KEY, JSON.stringify(contacts)); } catch(e){}
+}
+function loadLocal(){
+  try {
+    const d=localStorage.getItem(LS_KEY);
+    if(d) contacts=JSON.parse(d);
+  } catch(e){}
+}
+
+async function loadData(){
+  if(!sbOk){ loadLocal(); return; }
+  try {
+    const {data,error}=await sb.from(TABLE)
+      .select("*")
+      .eq("id_user",USER_ID)
+      .eq("id_app",APP_ID)
+      .order("created_at",{ascending:false});
+    if(error) throw error;
+    contacts=data||[];
+    saveLocal();
+  } catch(e){
+    console.warn("Supabase load failed, using localStorage",e);
+    loadLocal();
+    toast("⚠ Offline — dùng dữ liệu cục bộ","err");
+  }
+}
+
+async function upsertContact(c){
+  if(!sbOk){
+    const i=contacts.findIndex(x=>x.id===c.id);
+    if(i>=0) contacts[i]=c; else contacts.unshift(c);
+    saveLocal();
+    return true;
+  }
+  try {
+    const {error}=await sb.from(TABLE)
+      .upsert({...c, id_user:USER_ID, id_app:APP_ID},{onConflict:"id"});
+    if(error) throw error;
+    const i=contacts.findIndex(x=>x.id===c.id);
+    if(i>=0) contacts[i]=c; else contacts.unshift(c);
+    saveLocal();
+    return true;
+  } catch(e){
+    console.error("Upsert failed",e);
+    toast("Lỗi lưu dữ liệu: "+e.message,"err");
+    return false;
+  }
+}
+
+async function deleteContact(id){
+  if(!confirm("Xóa liên hệ này?")) return;
+  if(!sbOk){
+    contacts=contacts.filter(x=>x.id!==id);
+    saveLocal(); renderContacts(); closeDetail();
+    return;
+  }
+  try {
+    const {error}=await sb.from(TABLE).delete()
+      .eq("id_user",USER_ID).eq("id_app",APP_ID).eq("id",id);
+    if(error) throw error;
+    contacts=contacts.filter(x=>x.id!==id);
+    saveLocal(); renderContacts(); closeDetail();
+    toast("Đã xóa liên hệ");
+  } catch(e){ toast("Lỗi xóa: "+e.message,"err"); }
+}
+
+// pull-on-focus
+window.addEventListener("focus", async ()=>{
+  await loadData();
+  renderContacts();
+});
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function getFiltered(){
+  let list=[...contacts];
+  const q=($("searchInput").value||"").toLowerCase().trim();
+  if(q) list=list.filter(c=>{
+    const phones=(c.phones||[]).map(p=>p.value||"").join(" ");
+    return (c.name||"").toLowerCase().includes(q)
+      || phones.includes(q)
+      || (c.org||"").toLowerCase().includes(q)
+      || (c.specs||[]).join(" ").toLowerCase().includes(q);
+  });
+  if(curFilter==="r1") list=list.filter(c=>+c.rel===1);
+  else if(curFilter==="r2") list=list.filter(c=>+c.rel===2);
+  else if(curFilter==="r3") list=list.filter(c=>+c.rel===3);
+  else if(curFilter==="list"&&curList) list=list.filter(c=>(c.lists||[]).includes(curList));
+  const spec=$("specSel").value;
+  if(spec) list=list.filter(c=>(c.specs||[]).includes(spec));
+  const s=$("sortSel").value;
+  if(s==="name") list.sort((a,b)=>(a.name||"").localeCompare(b.name||"","vi"));
+  else if(s==="rel") list.sort((a,b)=>+a.rel-+b.rel);
+  else list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  return list;
+}
+
+function renderContacts(){
+  const list=getFiltered();
+  const grid=$("grid");
+  $("lblCount").textContent=list.length+" liên hệ";
+  if(!list.length){
+    grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">📭</div><p>Không có liên hệ nào</p></div>`;
+  } else {
+    grid.innerHTML=list.map(c=>cardHTML(c)).join("");
+  }
+  updateSidebar();
+  updateStatus();
+  updateSpecFilter();
+}
+
+function cardHTML(c){
+  const rel=+c.rel||2;
+  const phone1=(c.phones||[])[0]?.value||"—";
+  const specs=(c.specs||[]).slice(0,2).map(s=>`<span class="tag tag-spec">${s}</span>`).join("");
+  const lists=(c.lists||[]).slice(0,1).map(l=>`<span class="tag tag-list">${l}</span>`).join("");
+  const via=c.via?`<span class="tag tag-via">👤 ${c.via}</span>`:"";
+  return `<div class="card" onclick="showDetail('${c.id}')">
+    <div class="card-acts">
+      <button class="ib edit" onclick="event.stopPropagation();openEdit('${c.id}')">✏</button>
+      <button class="ib del" onclick="event.stopPropagation();deleteContact('${c.id}')">✕</button>
+    </div>
+    <div class="card-top">
+      <div class="av" style="background:${aColor(c.name||"?")}"> ${initials(c.name||"?")} </div>
+      <div class="ci">
+        <div class="cname">${c.name||"—"}</div>
+        <div class="corg">${[c.org,c.position].filter(Boolean).join(" · ")||"—"}</div>
+      </div>
+      <div class="rel-badge r${rel}">${RELMAP[rel]}</div>
+    </div>
+    <div class="cphone">📞 ${phone1}</div>
+    <div class="ctags">${specs}${lists}${via}</div>
+  </div>`;
+}
+
+function updateSidebar(){
+  $("c-all").textContent=contacts.length;
+  $("c-r1").textContent=contacts.filter(c=>+c.rel===1).length;
+  $("c-r2").textContent=contacts.filter(c=>+c.rel===2).length;
+  $("c-r3").textContent=contacts.filter(c=>+c.rel===3).length;
+  const allLists=[...new Set(contacts.flatMap(c=>c.lists||[]))].sort();
+  $("sbLists").innerHTML=allLists.map(l=>{
+    const n=contacts.filter(c=>(c.lists||[]).includes(l)).length;
+    const act=(curFilter==="list"&&curList===l)?"active":"";
+    return `<div class="sb-item ${act}" onclick="setSbList(this,'${l.replace(/'/g,"\\'")}')">
+      <span class="ico">📋</span>
+      <span class="lbl" title="${l}">${l}</span>
+      <span class="cnt">${n}</span>
+    </div>`;
+  }).join("");
+}
+
+function updateStatus(){
+  $("st-total").textContent=contacts.length;
+  $("st-r1").textContent=contacts.filter(c=>+c.rel===1).length;
+  $("st-r2").textContent=contacts.filter(c=>+c.rel===2).length;
+  $("st-r3").textContent=contacts.filter(c=>+c.rel===3).length;
+  $("st-lists").textContent=new Set(contacts.flatMap(c=>c.lists||[])).size;
+}
+
+function updateSpecFilter(){
+  const sel=$("specSel"); const cur=sel.value;
+  const all=[...new Set(contacts.flatMap(c=>c.specs||[]))].sort();
+  sel.innerHTML=`<option value="">Tất cả chuyên môn</option>`
+    +all.map(s=>`<option value="${s}" ${s===cur?"selected":""}>${s}</option>`).join("");
+}
+
+// ═══════════════════════════════════════
+// FILTER CONTROLS
+// ═══════════════════════════════════════
+function setSbFilter(el,f){
+  document.querySelectorAll(".sb-item").forEach(e=>e.classList.remove("active"));
+  el.classList.add("active");
+  curFilter=f; curList=null;
+  renderContacts();
+}
+function setSbList(el,l){
+  document.querySelectorAll(".sb-item").forEach(e=>e.classList.remove("active"));
+  el.classList.add("active");
+  curFilter="list"; curList=l;
+  renderContacts();
+}
+
+// ═══════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════
+function showDetail(id){
+  const c=contacts.find(x=>x.id===id); if(!c) return;
+  const rel=+c.rel||2;
+  const phones=(c.phones||[]).map(p=>`<div>📞 <a href="tel:${p.value}">${p.value}</a> <span style="color:var(--t3);font-size:11px">${p.type}</span></div>`).join("");
+  const emails=(c.emails||[]).map(e=>`<a href="mailto:${e.value}">${e.value}</a>`).join("<br>");
+  const socials=(c.socials||[]).map(s=>`<span style="font-size:11px;color:var(--t3)">${s.type}</span> ${s.value}`).join("<br>");
+  const specs=(c.specs||[]).map(s=>`<span class="tag tag-spec">${s}</span>`).join(" ");
+  const lists=(c.lists||[]).map(l=>`<span class="tag tag-list">${l}</span>`).join(" ");
+  const panel=$("detailPanel");
+  panel.innerHTML=`
+    <div class="dp-head"><button class="ib" onclick="closeDetail()">✕</button></div>
+    <div class="dp-body">
+      <div class="dp-av" style="background:${aColor(c.name||"?")}">${initials(c.name||"?")}</div>
+      <div>
+        <div class="dp-name">${c.name||"—"}</div>
+        <div class="dp-org">${[c.org,c.position].filter(Boolean).join(" · ")||""}</div>
+      </div>
+      <div class="dp-rel"><span class="rel-badge r${rel}">${RELMAP[rel]} ${RELLBL[rel]}</span></div>
+      <div class="dp-sec">
+        <div class="dp-sec-title">Liên hệ</div>
+        <div class="dp-row"><span class="dp-lbl">SĐT</span><span class="dp-val dp-phones">${phones||"—"}</span></div>
+        ${emails?`<div class="dp-row"><span class="dp-lbl">Email</span><span class="dp-val">${emails}</span></div>`:""}
+        ${socials?`<div class="dp-row"><span class="dp-lbl">MXH</span><span class="dp-val">${socials}</span></div>`:""}
+      </div>
+      <div class="dp-sec">
+        <div class="dp-sec-title">Thông tin</div>
+        ${specs?`<div class="dp-row"><span class="dp-lbl">Chuyên môn</span><span class="dp-val">${specs}</span></div>`:""}
+        ${lists?`<div class="dp-row"><span class="dp-lbl">Danh sách</span><span class="dp-val">${lists}</span></div>`:""}
+        ${c.via?`<div class="dp-row"><span class="dp-lbl">Quen qua</span><span class="dp-val">${c.via}</span></div>`:""}
+      </div>
+      ${c.note?`<div class="dp-sec"><div class="dp-sec-title">Ghi chú</div><div style="font-size:13px;color:var(--t2);line-height:1.6">${c.note}</div></div>`:""}
+    </div>
+    <div class="dp-foot">
+      <button class="btn btn-g" onclick="openEdit('${c.id}')">✏ Sửa</button>
+      <button class="btn btn-d" onclick="deleteContact('${c.id}')">✕ Xóa</button>
+    </div>`;
+  panel.classList.add("open");
+}
+function closeDetail(){ $("detailPanel").classList.remove("open"); }
+
+// ═══════════════════════════════════════
+// DYNAMIC FORM FIELDS
+// ═══════════════════════════════════════
+function phoneRow(ph={value:"",type:"mobile"}){
+  const d=document.createElement("div"); d.className="dyn-field";
+  d.innerHTML=`
+    <select class="ph-type">
+      <option value="mobile" ${ph.type==="mobile"?"selected":""}>Di động</option>
+      <option value="work" ${ph.type==="work"?"selected":""}>Công ty</option>
+      <option value="home" ${ph.type==="home"?"selected":""}>Nhà</option>
+    </select>
+    <input type="tel" class="ph-val" placeholder="0912345678" value="${ph.value}">
+    <button class="rm-btn" onclick="this.parentNode.remove()">✕</button>`;
+  return d;
+}
+function emailRow(em={value:"",type:"work"}){
+  const d=document.createElement("div"); d.className="dyn-field";
+  d.innerHTML=`
+    <select class="em-type">
+      <option value="work" ${em.type==="work"?"selected":""}>Công ty</option>
+      <option value="personal" ${em.type==="personal"?"selected":""}>Cá nhân</option>
+    </select>
+    <input type="email" class="em-val" placeholder="email@example.com" value="${em.value}">
+    <button class="rm-btn" onclick="this.parentNode.remove()">✕</button>`;
+  return d;
+}
+function socialRow(sc={value:"",type:"zalo"}){
+  const d=document.createElement("div"); d.className="dyn-field";
+  d.innerHTML=`
+    <select class="sc-type">
+      <option value="zalo" ${sc.type==="zalo"?"selected":""}>Zalo</option>
+      <option value="facebook" ${sc.type==="facebook"?"selected":""}>Facebook</option>
+      <option value="telegram" ${sc.type==="telegram"?"selected":""}>Telegram</option>
+    </select>
+    <input class="sc-val" placeholder="SĐT hoặc URL" value="${sc.value}">
+    <button class="rm-btn" onclick="this.parentNode.remove()">✕</button>`;
+  return d;
+}
+function addPhone(){ $("phones-list").appendChild(phoneRow()); }
+function addEmail(){ $("emails-list").appendChild(emailRow()); }
+function addSocial(){ $("socials-list").appendChild(socialRow()); }
+
+function getPhones(){ return [...$("phones-list").querySelectorAll(".dyn-field")].map(d=>({value:d.querySelector(".ph-val").value.trim(),type:d.querySelector(".ph-type").value})).filter(p=>p.value); }
+function getEmails(){ return [...$("emails-list").querySelectorAll(".dyn-field")].map(d=>({value:d.querySelector(".em-val").value.trim(),type:d.querySelector(".em-type").value})).filter(e=>e.value); }
+function getSocials(){ return [...$("socials-list").querySelectorAll(".dyn-field")].map(d=>({value:d.querySelector(".sc-val").value.trim(),type:d.querySelector(".sc-type").value})).filter(s=>s.value); }
+
+// ═══════════════════════════════════════
+// TAGS (specs + lists)
+// ═══════════════════════════════════════
+function renderTagChips(field){
+  const wrap=$(field==="specs"?"specs-wrap":"lists-wrap");
+  const inputEl=$(field==="specs"?"spec-input":"list-input");
+  wrap.querySelectorAll(".tag-chip").forEach(e=>e.remove());
+  tagState[field].forEach(tag=>{
+    const ch=document.createElement("span"); ch.className="tag-chip";
+    ch.innerHTML=`${tag}<button onclick="removeTag('${field}','${tag.replace(/'/g,"\\'")}')" tabindex="-1">✕</button>`;
+    wrap.insertBefore(ch,inputEl);
+  });
+}
+function addTag(field,val){
+  val=val.trim(); if(!val) return;
+  if(!tagState[field].includes(val)) tagState[field].push(val);
+  renderTagChips(field);
+  $(field==="specs"?"spec-input":"list-input").value="";
+  hideListDD();
+}
+function removeTag(field,val){
+  tagState[field]=tagState[field].filter(t=>t!==val);
+  renderTagChips(field);
+}
+function tagsKeydown(e,field){
+  if(e.key==="Enter"||e.key===","){ e.preventDefault(); addTag(field,e.target.value); }
+  if(e.key==="Backspace"&&!e.target.value&&tagState[field].length){
+    tagState[field].pop(); renderTagChips(field);
+  }
+}
+function showListDD(){
+  const inp=$("list-input"); const q=inp.value.toLowerCase();
+  const allLists=[...new Set(contacts.flatMap(c=>c.lists||[]))].sort();
+  const filtered=allLists.filter(l=>l.toLowerCase().includes(q)&&!tagState.lists.includes(l));
+  const dd=$("list-dd");
+  if(!filtered.length){dd.style.display="none";return;}
+  dd.innerHTML=filtered.map(l=>`<div onclick="addTag('lists','${l.replace(/'/g,"\\'")}')">📋 ${l}</div>`).join("");
+  dd.style.display="";
+}
+function hideListDD(){ $("list-dd").style.display="none"; }
+
+// ═══════════════════════════════════════
+// ADD / EDIT MODAL
+// ═══════════════════════════════════════
+function openAdd(){
+  editId=null;
+  $("modalTitle").textContent="Thêm liên hệ mới";
+  $("f-name").value=""; $("f-rel").value="2";
+  $("f-org").value=""; $("f-position").value="";
+  $("f-via").value=""; $("f-note").value="";
+  $("phones-list").innerHTML=""; addPhone();
+  $("emails-list").innerHTML="";
+  $("socials-list").innerHTML="";
+  tagState={specs:[],lists:[]}; renderTagChips("specs"); renderTagChips("lists");
+  $("contactModal").classList.add("open");
+}
+function openEdit(id){
+  const c=contacts.find(x=>x.id===id); if(!c) return;
+  editId=id;
+  $("modalTitle").textContent="Sửa liên hệ";
+  $("f-name").value=c.name||"";
+  $("f-rel").value=c.rel||2;
+  $("f-org").value=c.org||"";
+  $("f-position").value=c.position||"";
+  $("f-via").value=c.via||"";
+  $("f-note").value=c.note||"";
+  $("phones-list").innerHTML="";
+  (c.phones||[{value:"",type:"mobile"}]).forEach(p=>$("phones-list").appendChild(phoneRow(p)));
+  $("emails-list").innerHTML="";
+  (c.emails||[]).forEach(e=>$("emails-list").appendChild(emailRow(e)));
+  $("socials-list").innerHTML="";
+  (c.socials||[]).forEach(s=>$("socials-list").appendChild(socialRow(s)));
+  tagState={specs:[...(c.specs||[])],lists:[...(c.lists||[])]};
+  renderTagChips("specs"); renderTagChips("lists");
+  $("contactModal").classList.add("open");
+}
+function closeContactModal(){ $("contactModal").classList.remove("open"); }
+
+async function saveContact(){
+  const name=$("f-name").value.trim();
+  const phones=getPhones();
+  if(!name){ toast("Vui lòng nhập họ tên","err"); return; }
+  if(!phones.length){ toast("Vui lòng thêm ít nhất 1 số điện thoại","err"); return; }
+  const now=new Date().toISOString();
+  const c={
+    id: editId||uid(),
+    id_user: USER_ID,
+    id_app:  APP_ID,
+    name, phones,
+    emails: getEmails(),
+    socials: getSocials(),
+    org:$("f-org").value.trim(),
+    position:$("f-position").value.trim(),
+    specs:[...tagState.specs],
+    lists:[...tagState.lists],
+    via:$("f-via").value.trim(),
+    note:$("f-note").value.trim(),
+    rel:parseInt($("f-rel").value)||2,
+    created_at: editId?(contacts.find(x=>x.id===editId)||{}).created_at||now:now,
+    updated_at: now
+  };
+  const ok=await upsertContact(c);
+  if(ok){ closeContactModal(); renderContacts(); toast(editId?"Đã cập nhật liên hệ":"Đã thêm liên hệ mới"); }
+}
+
+// ═══════════════════════════════════════
+// IMPORT / EXPORT
+// ═══════════════════════════════════════
+function openIE(){ $("ieModal").classList.add("open"); importBuf=[]; }
+function closeIE(){ $("ieModal").classList.remove("open"); $("importPreview").innerHTML=""; $("importConfirm").style.display="none"; $("importOpts").style.display="none"; }
+
+function ieTab(el,tab){
+  document.querySelectorAll(".ie-tab").forEach(e=>e.classList.remove("active")); el.classList.add("active");
+  $("ie-import").style.display=tab==="import"?"":"none";
+  $("ie-export").style.display=tab==="export"?"":"none";
+}
+function setImportMode(m){
+  importMode=m;
+  $("opt-skip").classList.toggle("active",m==="skip");
+  $("opt-overwrite").classList.toggle("active",m==="overwrite");
+}
+function dzOver(e){ e.preventDefault(); $("dropZone").classList.add("over"); }
+function dzLeave(){ $("dropZone").classList.remove("over"); }
+function dzDrop(e){ e.preventDefault(); dzLeave(); const f=e.dataTransfer.files[0]; if(f) readFile(f); }
+function handleFile(inp){ if(inp.files[0]) readFile(inp.files[0]); }
+
+function readFile(file){
+  const ext=file.name.split(".").pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      if(ext==="json") importBuf=parseJSON(e.target.result);
+      else if(ext==="vcf") importBuf=parseVCF(e.target.result);
+      else importBuf=parseCSV(e.target.result);
+      showImportPreview(importBuf);
+    }catch(ex){ toast("Lỗi đọc file: "+ex.message,"err"); }
+  };
+  reader.readAsText(file,"UTF-8");
+}
+
+/* ── VCF PARSER ── */
+function parseVCF(text){
+  const cards=text.split(/BEGIN:VCARD/i).slice(1);
+  return cards.map(card=>{
+    const getVal=key=>{ const m=card.match(new RegExp(key+"[^:\r\n]*:([^\r\n]*)","i")); return m?m[1].trim().replace(/\\n/g,"\n").replace(/\\,/g,","):""; };
+    const fn=getVal("FN");
+    let name=fn;
+    if(!name){ const n=getVal("N"); name=n.split(";").filter(Boolean).reverse().join(" ").trim(); }
+    // phones
+    const phones=[]; let m; const pRe=/TEL([^:\r\n]*):([^\r\n]+)/gi;
+    while((m=pRe.exec(card))!=null){
+      const typePart=(m[1]||"").toLowerCase();
+      let type="mobile";
+      if(typePart.includes("work")) type="work";
+      else if(typePart.includes("home")) type="home";
+      phones.push({value:m[2].trim(),type});
+    }
+    // emails
+    const emails=[]; const eRe=/EMAIL([^:\r\n]*):([^\r\n]+)/gi;
+    while((m=eRe.exec(card))!=null){
+      const typePart=(m[1]||"").toLowerCase();
+      emails.push({value:m[2].trim(),type:typePart.includes("home")?"personal":"work"});
+    }
+    // socials from URL
+    const socials=[]; const uRe=/URL([^:\r\n]*):([^\r\n]+)/gi;
+    while((m=uRe.exec(card))!=null){
+      const url=m[2].trim().toLowerCase();
+      if(url.includes("facebook")||url.includes("fb.com")) socials.push({type:"facebook",value:m[2].trim()});
+      else if(url.includes("t.me")||url.includes("telegram")) socials.push({type:"telegram",value:m[2].trim()});
+    }
+    const org=getVal("ORG").split(";")[0];
+    const pos=getVal("TITLE");
+    const note=getVal("NOTE");
+    if(!name) return null;
+    return {id:uid(),id_user:USER_ID,id_app:APP_ID,name,phones,emails,socials,org,position:pos,specs:[],lists:[],via:"",note,rel:2,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  }).filter(Boolean);
+}
+
+/* ── CSV PARSER ── */
+function parseCSV(text){
+  const sep=text.split("\n")[0].includes("\t")?"\t":",";
+  const rows=text.trim().split("\n").map(r=>{
+    const cells=[]; let cur="",inQ=false;
+    for(const ch of r){
+      if(ch==='"') inQ=!inQ;
+      else if(ch===sep&&!inQ){cells.push(cur.trim());cur="";}
+      else cur+=ch;
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+  const hdr=rows[0].map(h=>h.toLowerCase().replace(/["\uFEFF]/g,"").trim());
+  const hmap=h=>{
+    if(/name|tên|họ/.test(h)) return "name";
+    if(/phone|sđt|tel|điện/.test(h)) return "phone";
+    if(/phone2/.test(h)) return "phone2";
+    if(/email/.test(h)) return "email";
+    if(/org|đơn vị|tổ chức/.test(h)) return "org";
+    if(/pos|chức vụ|title/.test(h)) return "position";
+    if(/rel|quan hệ/.test(h)) return "rel";
+    if(/spec|chuyên môn/.test(h)) return "specs";
+    if(/list|danh sách/.test(h)) return "lists";
+    if(/via|qua ai/.test(h)) return "via";
+    if(/note|ghi chú/.test(h)) return "note";
+    if(/zalo/.test(h)) return "zalo";
+    if(/facebook|fb/.test(h)) return "facebook";
+    if(/telegram/.test(h)) return "telegram";
+    return h;
+  };
+  return rows.slice(1).filter(r=>r.join("").trim()).map(row=>{
+    const obj={};
+    hdr.forEach((h,i)=>{ obj[hmap(h)]=(row[i]||"").replace(/^"|"$/g,"").trim(); });
+    const phones=[];
+    if(obj.phone) phones.push({value:obj.phone,type:"mobile"});
+    if(obj.phone2) phones.push({value:obj.phone2,type:"mobile"});
+    const emails=obj.email?[{value:obj.email,type:"work"}]:[];
+    const socials=[];
+    if(obj.zalo) socials.push({type:"zalo",value:obj.zalo});
+    if(obj.facebook) socials.push({type:"facebook",value:obj.facebook});
+    if(obj.telegram) socials.push({type:"telegram",value:obj.telegram});
+    const specs=obj.specs?obj.specs.split(";").map(s=>s.trim()).filter(Boolean):[];
+    const lists=obj.lists?obj.lists.split(";").map(s=>s.trim()).filter(Boolean):[];
+    const name=obj.name||"";
+    if(!name) return null;
+    return {id:uid(),id_user:USER_ID,id_app:APP_ID,name,phones,emails,socials,org:obj.org||"",position:obj.position||"",specs,lists,via:obj.via||"",note:obj.note||"",rel:parseInt(obj.rel)||2,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  }).filter(Boolean);
+}
+
+/* ── JSON PARSER ── */
+function parseJSON(text){
+  const d=JSON.parse(text);
+  const arr=Array.isArray(d)?d:(d.contacts||[]);
+  return arr.map(c=>({
+    id:uid(),id_user:USER_ID,id_app:APP_ID,
+    name:c.name||"",
+    phones:Array.isArray(c.phones)?c.phones:c.phone?[{value:c.phone,type:"mobile"}]:[],
+    emails:Array.isArray(c.emails)?c.emails:c.email?[{value:c.email,type:"work"}]:[],
+    socials:Array.isArray(c.socials)?c.socials:[],
+    org:c.org||"",position:c.position||"",
+    specs:Array.isArray(c.specs)?c.specs:[],
+    lists:Array.isArray(c.lists)?c.lists:[],
+    via:c.via||"",note:c.note||"",
+    rel:parseInt(c.rel)||2,
+    created_at:c.created_at||new Date().toISOString(),
+    updated_at:new Date().toISOString()
+  })).filter(c=>c.name);
+}
+
+function showImportPreview(list){
+  const prev=$("importPreview");
+  if(!list.length){ prev.innerHTML=`<p style="color:var(--danger);font-size:13px">Không tìm thấy liên hệ hợp lệ.</p>`; return; }
+  $("importOpts").style.display="";
+  prev.innerHTML=`<p style="color:var(--t2);font-size:13px;margin-bottom:8px">Tìm thấy <b style="color:var(--text)">${list.length}</b> liên hệ:</p>
+  <div class="preview-scroll"><table class="ptable">
+    <tr><th>Tên</th><th>SĐT</th><th>Đơn vị</th></tr>
+    ${list.slice(0,25).map(c=>`<tr><td>${c.name}</td><td>${(c.phones[0]||{}).value||"—"}</td><td>${c.org||"—"}</td></tr>`).join("")}
+    ${list.length>25?`<tr><td colspan="3" style="color:var(--t3);text-align:center">…và ${list.length-25} liên hệ nữa</td></tr>`:""}
+  </table></div>`;
+  $("importConfirm").style.display="";
+}
+
+async function confirmImport(){
+  const existKeys=new Set(contacts.map(c=>dedupeKey(c)));
+  let added=0,skipped=0,overwritten=0;
+  for(const c of importBuf){
+    const key=dedupeKey(c);
+    if(existKeys.has(key)){
+      if(importMode==="skip"){ skipped++; continue; }
+      // overwrite
+      const old=contacts.find(x=>dedupeKey(x)===key);
+      if(old){ c.id=old.id; c.created_at=old.created_at; overwritten++; }
+    } else { added++; }
+    await upsertContact(c);
+  }
+  renderContacts(); closeIE();
+  toast(`✅ Nhập ${added} mới, ${overwritten} ghi đè${skipped?", "+skipped+" bỏ qua":""}`);
+}
+
+/* ── EXPORT ── */
+function exportData(fmt){
+  if(fmt==="json"){
+    const out={id_user:USER_ID,id_app:APP_ID,exported:new Date().toISOString(),contacts};
+    dl("danh-ba.json",JSON.stringify(out,null,2),"application/json");
+  }
+  else if(fmt==="csv"){
+    const hdrs=["Họ tên","SĐT 1","SĐT 2","Email","Đơn vị","Chức vụ","Quan hệ","Chuyên môn","Danh sách","Zalo","Facebook","Telegram","Quen qua ai","Ghi chú"];
+    const rows=contacts.map(c=>{
+      const ph=c.phones||[];
+      const em=c.emails||[];
+      const sc=c.socials||[];
+      return [c.name,ph[0]?.value||"",ph[1]?.value||"",em[0]?.value||"",c.org||"",c.position||"",c.rel||2,
+        (c.specs||[]).join(";"), (c.lists||[]).join(";"),
+        sc.find(s=>s.type==="zalo")?.value||"",sc.find(s=>s.type==="facebook")?.value||"",sc.find(s=>s.type==="telegram")?.value||"",
+        c.via||"",c.note||""
+      ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
+    });
+    dl("danh-ba.csv","\uFEFF"+hdrs.join(",")+"\n"+rows.map(r=>r.join(",")).join("\n"),"text/csv");
+  }
+  else if(fmt==="vcf"){
+    const vcf=contacts.map(c=>{
+      const parts=(c.name||"").trim().split(/\s+/);
+      const last=parts.slice(0,-1).join(" "); const first=parts[parts.length-1];
+      let v=`BEGIN:VCARD\nVERSION:3.0\nFN:${c.name}\nN:${last};${first};;;\n`;
+      (c.phones||[]).forEach(p=>{
+        const t=p.type==="work"?"WORK":p.type==="home"?"HOME":"CELL";
+        v+=`TEL;TYPE=${t}:${p.value}\n`;
+      });
+      (c.emails||[]).forEach(e=>{
+        const t=e.type==="personal"?"HOME":"WORK";
+        v+=`EMAIL;TYPE=${t}:${e.value}\n`;
+      });
+      if(c.org) v+=`ORG:${c.org}\n`;
+      if(c.position) v+=`TITLE:${c.position}\n`;
+      (c.socials||[]).forEach(s=>{
+        if(s.type==="facebook") v+=`URL;TYPE=facebook:${s.value.startsWith("http")?s.value:"https://facebook.com/"+s.value}\n`;
+        else if(s.type==="telegram") v+=`URL;TYPE=telegram:${s.value.startsWith("http")?s.value:"https://t.me/"+s.value}\n`;
+        else if(s.type==="zalo") v+=`URL;TYPE=zalo:https://zalo.me/${s.value}\n`;
+      });
+      if(c.note) v+=`NOTE:${c.note.replace(/\n/g,"\\n")}\n`;
+      v+="END:VCARD";
+      return v;
+    }).join("\n\n");
+    dl("danh-ba.vcf",vcf,"text/vcard");
+  }
+}
+function dl(name,content,mime){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
+  a.download=name; a.click();
+}
+
+// ═══════════════════════════════════════
+// CLOSE OVERLAY ON OUTSIDE CLICK
+// ═══════════════════════════════════════
+["contactModal","ieModal"].forEach(id=>{
+  $(id).addEventListener("click",e=>{
+    if(e.target.id===id){
+      if(id==="contactModal") closeContactModal();
+      else closeIE();
+    }
+  });
+});
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+(async()=>{
+  await loadData();
+  renderContacts();
+  $("loading").style.display="none";
+  if(!sbOk) toast("⚠ Chưa cấu hình Supabase — dùng localStorage","err",5000);
+})();
+</script>
+
+<!-- SQL SETUP COMMENT
+=== TẠO TABLE SUPABASE ===
+
+create table contacts (
+  id          uuid primary key default gen_random_uuid(),
+  id_user     text not null,
+  id_app      text not null,
+  name        text,
+  phones      jsonb,
+  emails      jsonb,
+  socials     jsonb,
+  org         text,
+  position    text,
+  specs       jsonb,
+  lists       jsonb,
+  via         text,
+  note        text,
+  rel         int2 default 2,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+create unique index uq_contacts on contacts (id_user, id_app, id);
+create index idx_contacts_user_app on contacts (id_user, id_app);
+
+-- RLS
+alter table contacts enable row level security;
+create policy "anon full access" on contacts for all using (true) with check (true);
+
+=== SAU ĐÓ ===
+Thay YOUR_SUPABASE_URL và YOUR_SUPABASE_ANON_KEY trong file
+
+-->
+</body>
+</html>
