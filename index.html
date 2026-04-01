@@ -498,6 +498,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
       <div class="fg"><label>Quen qua ai</label><input id="f-via" placeholder="Nguyễn Văn B"></div>
     </div>
 
+    <div class="frow">
+      <div class="fg"><label>Ngày sinh</label><input type="date" id="f-dob"></div>
+      <div class="fg"><label>Nơi sinh</label><input type="text" id="f-birth_place" placeholder="VD: Đồng Tháp"></div>
+    </div>
+
     <div class="fg"><label>Ghi chú</label><textarea id="f-note" rows="3" placeholder="Ghi chú thêm…"></textarea></div>
   </div>
   <div class="modal-foot">
@@ -848,6 +853,8 @@ function showDetail(id){
         ${specs?`<div class="dp-row"><span class="dp-lbl">Chuyên môn</span><span class="dp-val">${specs}</span></div>`:""}
         ${lists?`<div class="dp-row"><span class="dp-lbl">Danh sách</span><span class="dp-val">${lists}</span></div>`:""}
         ${c.via?`<div class="dp-row"><span class="dp-lbl">Quen qua</span><span class="dp-val">${c.via}</span></div>`:""}
+        ${c.dob?`<div class="dp-row"><span class="dp-lbl">Ngày sinh</span><span class="dp-val">${c.dob}</span></div>`:""}
+        ${c.birth_place?`<div class="dp-row"><span class="dp-lbl">Nơi sinh</span><span class="dp-val">${c.birth_place}</span></div>`:""}
       </div>
       ${c.note?`<div class="dp-sec"><div class="dp-sec-title">Ghi chú</div><div style="font-size:13px;color:var(--t2);line-height:1.6">${c.note}</div></div>`:""}
     </div>
@@ -955,6 +962,7 @@ function openAdd(){
   $("f-name").value=""; $("f-rel").value="2";
   $("f-org").value=""; $("f-position").value="";
   $("f-via").value=""; $("f-note").value="";
+  $("f-dob").value=""; $("f-birth_place").value="";
   $("phones-list").innerHTML=""; addPhone();
   $("emails-list").innerHTML="";
   $("socials-list").innerHTML="";
@@ -971,6 +979,8 @@ function openEdit(id){
   $("f-position").value=c.position||"";
   $("f-via").value=c.via||"";
   $("f-note").value=c.note||"";
+  $("f-dob").value=c.dob||"";
+  $("f-birth_place").value=c.birth_place||"";
   $("phones-list").innerHTML="";
   (c.phones||[{value:"",type:"mobile"}]).forEach(p=>$("phones-list").appendChild(phoneRow(p)));
   $("emails-list").innerHTML="";
@@ -1002,6 +1012,8 @@ async function saveContact(){
     lists:[...tagState.lists],
     via:$("f-via").value.trim(),
     note:$("f-note").value.trim(),
+    dob:$("f-dob").value,
+    birth_place:$("f-birth_place").value.trim(),
     rel:parseInt($("f-rel").value)||2,
     created_at: editId?(contacts.find(x=>x.id===editId)||{}).created_at||now:now,
     updated_at: now
@@ -1078,8 +1090,9 @@ function parseVCF(text){
     const org=getVal("ORG").split(";")[0];
     const pos=getVal("TITLE");
     const note=getVal("NOTE");
+    const dob=getVal("BDAY").slice(0,10)||"";
     if(!name) return null;
-    return {id:uid(),id_user:USER_ID,id_app:APP_ID,name,phones,emails,socials,org,position:pos,specs:[],lists:[],via:"",note,rel:2,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    return {id:uid(),id_user:USER_ID,id_app:APP_ID,name,phones,emails,socials,org,position:pos,specs:[],lists:[],via:"",note,dob,birth_place:"",rel:2,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
   }).filter(Boolean);
 }
 
@@ -1109,6 +1122,8 @@ function parseCSV(text){
     if(/list|danh sách/.test(h)) return "lists";
     if(/via|qua ai/.test(h)) return "via";
     if(/note|ghi chú/.test(h)) return "note";
+    if(/dob|ngày sinh|ngay sinh/.test(h)) return "dob";
+    if(/birth.place|nơi sinh|noi sinh/.test(h)) return "birth_place";
     if(/zalo/.test(h)) return "zalo";
     if(/facebook|fb/.test(h)) return "facebook";
     if(/telegram/.test(h)) return "telegram";
@@ -1129,7 +1144,7 @@ function parseCSV(text){
     const lists=obj.lists?obj.lists.split(";").map(s=>s.trim()).filter(Boolean):[];
     const name=obj.name||"";
     if(!name) return null;
-    return {id:uid(),id_user:USER_ID,id_app:APP_ID,name,phones,emails,socials,org:obj.org||"",position:obj.position||"",specs,lists,via:obj.via||"",note:obj.note||"",rel:parseInt(obj.rel)||2,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    return {id:uid(),id_user:USER_ID,id_app:APP_ID,name,phones,emails,socials,org:obj.org||"",position:obj.position||"",specs,lists,via:obj.via||"",note:obj.note||"",dob:obj.dob||"",birth_place:obj.birth_place||"",rel:parseInt(obj.rel)||2,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
   }).filter(Boolean);
 }
 
@@ -1147,6 +1162,7 @@ function parseJSON(text){
     specs:Array.isArray(c.specs)?c.specs:[],
     lists:Array.isArray(c.lists)?c.lists:[],
     via:c.via||"",note:c.note||"",
+    dob:c.dob||"",birth_place:c.birth_place||"",
     rel:parseInt(c.rel)||2,
     created_at:c.created_at||new Date().toISOString(),
     updated_at:new Date().toISOString()
@@ -1190,7 +1206,7 @@ function exportData(fmt){
     dl("danh-ba.json",JSON.stringify(out,null,2),"application/json");
   }
   else if(fmt==="csv"){
-    const hdrs=["Họ tên","SĐT 1","SĐT 2","Email","Đơn vị","Chức vụ","Quan hệ","Chuyên môn","Danh sách","Zalo","Facebook","Telegram","Quen qua ai","Ghi chú"];
+    const hdrs=["Họ tên","SĐT 1","SĐT 2","Email","Đơn vị","Chức vụ","Quan hệ","Chuyên môn","Danh sách","Zalo","Facebook","Telegram","Quen qua ai","Ngày sinh","Nơi sinh","Ghi chú"];
     const rows=contacts.map(c=>{
       const ph=c.phones||[];
       const em=c.emails||[];
@@ -1198,7 +1214,7 @@ function exportData(fmt){
       return [c.name,ph[0]?.value||"",ph[1]?.value||"",em[0]?.value||"",c.org||"",c.position||"",c.rel||2,
         (c.specs||[]).join(";"), (c.lists||[]).join(";"),
         sc.find(s=>s.type==="zalo")?.value||"",sc.find(s=>s.type==="facebook")?.value||"",sc.find(s=>s.type==="telegram")?.value||"",
-        c.via||"",c.note||""
+        c.via||"",c.dob||"",c.birth_place||"",c.note||""
       ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
     });
     dl("danh-ba.csv","\uFEFF"+hdrs.join(",")+"\n"+rows.map(r=>r.join(",")).join("\n"),"text/csv");
@@ -1218,12 +1234,16 @@ function exportData(fmt){
       });
       if(c.org) v+=`ORG:${c.org}\n`;
       if(c.position) v+=`TITLE:${c.position}\n`;
+      if(c.dob) v+=`BDAY:${c.dob}\n`;
       (c.socials||[]).forEach(s=>{
         if(s.type==="facebook") v+=`URL;TYPE=facebook:${s.value.startsWith("http")?s.value:"https://facebook.com/"+s.value}\n`;
         else if(s.type==="telegram") v+=`URL;TYPE=telegram:${s.value.startsWith("http")?s.value:"https://t.me/"+s.value}\n`;
         else if(s.type==="zalo") v+=`URL;TYPE=zalo:https://zalo.me/${s.value}\n`;
       });
-      if(c.note) v+=`NOTE:${c.note.replace(/\n/g,"\\n")}\n`;
+      const noteParts=[];
+      if(c.note) noteParts.push(c.note);
+      if(c.birth_place) noteParts.push("Nơi sinh: "+c.birth_place);
+      if(noteParts.length) v+=`NOTE:${noteParts.join("\\n").replace(/\n/g,"\\n")}\n`;
       v+="END:VCARD";
       return v;
     }).join("\n\n");
